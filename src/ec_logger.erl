@@ -18,6 +18,7 @@
 	 terminate/2, code_change/3]).
 
 -define(SERVER, ?MODULE). 
+-define(LOGGER, ec_logger).
 
 -record(state, {}).
 
@@ -51,6 +52,12 @@ start_link() ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
+    process_flag(trap_exit, true),
+    log4erl:info("starting ec_logger on: ~p", [node()]),
+    %% publish logger through resource_discovery
+    resource_discovery:add_local_resource_tuple({?LOGGER, node()}),
+    %% synch resources
+    resource_discovery:trade_resources(),
     {ok, #state{}}.
 
 %%--------------------------------------------------------------------
@@ -109,6 +116,9 @@ handle_info(_Info, State) ->
 %% @end
 %%--------------------------------------------------------------------
 terminate(_Reason, _State) ->
+    resource_discovery:delete_resource_tuple({?LOGGER, node()}),
+    resource_discovery:trade_resources(),
+    log4erl:info("ec_logger is shutting down on node ~p", [node()]),  
     ok.
 
 %%--------------------------------------------------------------------
