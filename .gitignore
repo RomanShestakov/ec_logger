@@ -1,0 +1,12 @@
+.DS_Store
+.eunit
+logs
+/ebin/*
+*~
+.#*
+*.beam
+rel/ec_logger
+rel/ec_logger/*
+/log/*
+/deps/*
+/doc/*

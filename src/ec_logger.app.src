@@ -1,0 +1,9 @@
+{application, ec_logger,
+ [
+  {description, ""},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [kernel, stdlib, log4erl, resource_discovery]},
+  {mod, { ec_logger_app, []}},
+  {env, []}
+ ]}.
