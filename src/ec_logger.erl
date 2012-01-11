@@ -34,7 +34,7 @@
 %% @end
 %%--------------------------------------------------------------------
 start_link() ->
-    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
+    gen_server:start_link(?MODULE, [], []).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -88,6 +88,10 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+handle_cast({stdout, Name, RunDate, Data}, State) ->
+    log4erl:info("~p , ~p, ~p",[Name, RunDate, Data]),
+    {noreply, State};
+
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
