@@ -74,6 +74,12 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+handle_call({open_logger, Name, RunDate}, _From, State) ->
+    {ok, _Log} = disk_log:open([{name, log_name(Name, RunDate)}, {file, log_path(Name, RunDate)}]),
+    {reply, ok, State};
+handle_call({stdout, Name, RunDate, Data}, _From, State) ->
+    log4erl:error("~p , ~p, ~p",[Name, RunDate, Data]),
+    {reply, ok, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
     {reply, Reply, State}.
@@ -88,10 +94,12 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_cast({stdout, Name, RunDate, Data}, State) ->
-    log4erl:info("~p , ~p, ~p",[Name, RunDate, Data]),
-    {noreply, State};
-
+%% handle_cast({open_logger, Name, RunDate}, State) ->
+%%     %{ok, _Log} = disk_log:open([{name, log_name(Name, RunDate)}, {file, log_path(Name, RunDate)}]),
+%%     {noreply, State};
+%% handle_cast({stdout, Name, RunDate, Data}, State) ->
+%%     log4erl:error("~p , ~p, ~p",[Name, RunDate, Data]),
+%%     {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -140,3 +148,18 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+ 
+%%--------------------------------------------------------------------
+%% @doc
+%% get name of logger for a given job name and run_date
+%% @end
+%%--------------------------------------------------------------------
+-spec log_name(string(), atom()) -> atom().
+log_name(Name, RunDate) ->
+    list_to_atom(Name ++ "_" ++ ec_time_fns:date_to_string(RunDate)).
+
+log_path(Name, RunDate) ->
+    Dir = filename:join(["/Users/romanshestakov/Development/ec_master/reports", ec_time_fns:date_to_string(RunDate), Name]),
+    filelib:ensure_dir(Dir),
+    Dir.
