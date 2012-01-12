@@ -20,7 +20,7 @@
 -define(SERVER, ?MODULE). 
 -define(LOGGER, ec_logger).
 
--record(state, {}).
+-record(state, {logs = []}).
 
 %%%===================================================================
 %%% API
@@ -74,11 +74,23 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_call({open_logger, Name, RunDate}, _From, State) ->
-    {ok, _Log} = disk_log:open([{name, log_name(Name, RunDate)}, {file, log_path(Name, RunDate)}]),
-    {reply, ok, State};
-handle_call({stdout, Name, RunDate, Data}, _From, State) ->
+handle_call({open_logger, Name, RunDate}, _From, #state{logs = Logs} = State) ->
+    %% open logger for a given file
+    LogName = log_name(Name, RunDate),
+    case proplists:get_value(LogName, Logs) of
+	undefined ->
+	    %% if log for this file is not open - open it, otherwise do nothing
+	    {ok, Log} = disk_log:open([{name, LogName}, {format, external}, {file, log_path(Name, RunDate)}]),
+	    %% add new open log to a list of open logs
+	    {reply, ok, State#state{logs = Logs ++ [{LogName, Log}]}};
+	_Other -> 
+	    {reply, ok, State}
+    end;
+handle_call({stdout, Name, RunDate, Data}, _From, #state{logs = Logs} = State) ->
+    LogName = log_name(Name, RunDate),
+    Log = proplists:get_value(LogName, Logs),
     log4erl:error("~p , ~p, ~p",[Name, RunDate, Data]),
+    disk_log:blog(Log, Data),
     {reply, ok, State};
 handle_call(_Request, _From, State) ->
     Reply = ok,
