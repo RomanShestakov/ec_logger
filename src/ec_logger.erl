@@ -86,6 +86,15 @@ handle_call({open_logger, Name, RunDate, Group}, _From, #state{logs = Logs} = St
 	_Other -> 
 	    {reply, ok, State}
     end;
+handle_call({close_logger, Name, RunDate}, _From, #state{logs = Logs} = State) ->
+    LogName = log_name(Name, RunDate),
+    case proplists:get_value(LogName, Logs) of
+	undefined ->
+	    {reply, {error, log_not_open, LogName}, State};
+	Log -> 
+	    disk_log:close(Log),
+	    {reply, ok, State#state{logs = proplists:delete(LogName, Logs)}}
+    end;
 handle_call({stdout, Name, RunDate, Data}, _From, #state{logs = Logs} = State) ->
     LogName = log_name(Name, RunDate),
     Log = proplists:get_value(LogName, Logs),
@@ -175,8 +184,8 @@ log_path(Name, RunDate, undefined) ->
     Dir = filename:join(["/Users/romanshestakov/Development/ec_master/log", ec_time_fns:date_to_string(RunDate), Name]),
     filelib:ensure_dir(Dir),
     Dir;
-log_path(_Name, RunDate, {Group, File}) ->
-    Dir = filename:join(["/Users/romanshestakov/Development/ec_master/reports", Group, ec_time_fns:date_to_string(RunDate), File]),
+log_path(_Name, RunDate, {_Group, File}) ->
+    Dir = filename:join(["/Users/romanshestakov/Development/ec_master/reports", ec_time_fns:date_to_string(RunDate), File]),
     filelib:ensure_dir(Dir),
     Dir.
 
