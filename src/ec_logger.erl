@@ -176,16 +176,23 @@ code_change(_OldVsn, State, _Extra) ->
 %% get name of logger for a given job name and run_date
 %% @end
 %%--------------------------------------------------------------------
--spec log_name(string(), atom()) -> atom().
+-spec log_name(binary(), atom()) -> atom().
 log_name(Name, RunDate) ->
-    list_to_atom(Name ++ "_" ++ ec_time_fns:date_to_string(RunDate)).
+    list_to_atom(binary_to_list(Name) ++ "_" ++ ec_time_fns:date_to_string(RunDate)).
 
+ 
+%%--------------------------------------------------------------------
+%% @doc
+%%
+%% @end
+%%--------------------------------------------------------------------
+-spec log_path(binary(), atom(), atom()) -> string().
 log_path(Name, RunDate, undefined) ->
-    Dir = filename:join(["/Users/romanshestakov/Development/ec_master/log", ec_time_fns:date_to_string(RunDate), Name]),
+    Dir = filename:join(["/Users/romanshestakov/Development/ec_master/log", ec_time_fns:date_to_string(RunDate), binary_to_list(Name)]),
     filelib:ensure_dir(Dir),
     Dir;
 log_path(Name, RunDate, r) ->
-    Dir = filename:join(["/Users/romanshestakov/Development/ec_master/reports", ec_time_fns:date_to_string(RunDate), Name]),
+    Dir = filename:join(["/Users/romanshestakov/Development/ec_master/reports", ec_time_fns:date_to_string(RunDate), binary_to_list(Name)]),
     filelib:ensure_dir(Dir),
     Dir.
 
