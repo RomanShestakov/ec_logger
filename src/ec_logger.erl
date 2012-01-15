@@ -74,13 +74,13 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_call({open_logger, Name, RunDate, Group}, _From, #state{logs = Logs} = State) ->
+handle_call({open_logger, Name, RunDate, Flag}, _From, #state{logs = Logs} = State) ->
     %% open logger for a given file
     LogName = log_name(Name, RunDate),
     case proplists:get_value(LogName, Logs) of
 	undefined ->
 	    %% if log for this file is not open - open it, otherwise do nothing
-	    {ok, Log} = disk_log:open([{name, LogName}, {format, external}, {file, log_path(Name, RunDate, Group)}]),
+	    {ok, Log} = disk_log:open([{name, LogName}, {format, external}, {file, log_path(Name, RunDate, Flag)}]),
 	    %% add new open log to a list of open logs
 	    {reply, ok, State#state{logs = Logs ++ [{LogName, Log}]}};
 	_Other -> 
@@ -184,8 +184,8 @@ log_path(Name, RunDate, undefined) ->
     Dir = filename:join(["/Users/romanshestakov/Development/ec_master/log", ec_time_fns:date_to_string(RunDate), Name]),
     filelib:ensure_dir(Dir),
     Dir;
-log_path(_Name, RunDate, {_Group, File}) ->
-    Dir = filename:join(["/Users/romanshestakov/Development/ec_master/reports", ec_time_fns:date_to_string(RunDate), File]),
+log_path(Name, RunDate, r) ->
+    Dir = filename:join(["/Users/romanshestakov/Development/ec_master/reports", ec_time_fns:date_to_string(RunDate), Name]),
     filelib:ensure_dir(Dir),
     Dir.
 
