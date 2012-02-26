@@ -80,7 +80,8 @@ handle_call({open_logger, Name, RunDate, Flag}, _From, #state{logs = Logs} = Sta
     case proplists:get_value(LogName, Logs) of
 	undefined ->
 	    %% if log for this file is not open - open it, otherwise do nothing
-	    {ok, Log} = disk_log:open([{name, LogName}, {format, external}, {file, log_path(Name, RunDate, Flag)}]),
+	    log4erl:debug("opening logger ~p", [LogName]),
+	    {ok, Log} = disk_log:open([{name, LogName}, {format, external}, {repair, truncate},  {file, log_path(Name, RunDate, Flag)}]),
 	    %% add new open log to a list of open logs
 	    {reply, ok, State#state{logs = Logs ++ [{LogName, Log}]}};
 	_Other -> 
@@ -90,15 +91,17 @@ handle_call({close_logger, Name, RunDate}, _From, #state{logs = Logs} = State) -
     LogName = log_name(Name, RunDate),
     case proplists:get_value(LogName, Logs) of
 	undefined ->
+	    log4erl:error("can't close logger ~p", [LogName]),
 	    {reply, {error, log_not_open, LogName}, State};
 	Log -> 
+	    log4erl:debug("closing logger ~p", [LogName]),
 	    disk_log:close(Log),
 	    {reply, ok, State#state{logs = proplists:delete(LogName, Logs)}}
     end;
 handle_call({stdout, Name, RunDate, Data}, _From, #state{logs = Logs} = State) ->
     LogName = log_name(Name, RunDate),
     Log = proplists:get_value(LogName, Logs),
-    log4erl:error("~p , ~p, ~p",[Name, RunDate, Data]),
+    log4erl:debug("~p, ~p, ~p",[Name, RunDate, Data]),
     disk_log:blog(Log, Data),
     {reply, ok, State};
 handle_call(_Request, _From, State) ->
@@ -169,7 +172,6 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
  
 %%--------------------------------------------------------------------
 %% @doc
@@ -180,7 +182,6 @@ code_change(_OldVsn, State, _Extra) ->
 log_name(Name, RunDate) ->
     list_to_atom(binary_to_list(Name) ++ "_" ++ ec_time_fns:date_to_string(RunDate)).
 
- 
 %%--------------------------------------------------------------------
 %% @doc
 %%
@@ -188,11 +189,11 @@ log_name(Name, RunDate) ->
 %%--------------------------------------------------------------------
 -spec log_path(binary(), atom(), atom()) -> string().
 log_path(Name, RunDate, undefined) ->
-    Dir = filename:join(["/Users/romanshestakov/Development/ec_master/log", ec_time_fns:date_to_string(RunDate), binary_to_list(Name)]),
+    Dir = filename:join([ec_logger_util:get_log_dir(), ec_time_fns:date_to_string(RunDate), binary_to_list(Name)]),
     filelib:ensure_dir(Dir),
     Dir;
 log_path(Name, RunDate, r) ->
-    Dir = filename:join(["/Users/romanshestakov/Development/ec_master/reports", ec_time_fns:date_to_string(RunDate), binary_to_list(Name)]),
+    Dir = filename:join([ec_logger_util:get_reports_dir(), ec_time_fns:date_to_string(RunDate), binary_to_list(Name)]),
     filelib:ensure_dir(Dir),
     Dir.
 
